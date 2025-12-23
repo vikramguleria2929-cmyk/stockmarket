@@ -4,7 +4,7 @@ from utils import calculate_indicators
 from datetime import datetime
 import pandas as pd
 from flask import Flask, jsonify
-from flask import Flask, request, jsonify, render_template,redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from dotenv import load_dotenv
 import os
 import json
@@ -14,7 +14,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 
 load_dotenv()  # Load .env file
-
 
 
 EMAIL_USER = os.getenv("EMAIL_USER")
@@ -708,6 +707,7 @@ def contact_page():
 
 load_dotenv(dotenv_path=".env")
 
+
 @app.route("/send-contact", methods=["POST"])
 def send_contact():
     user_email = request.form.get("email")
@@ -741,6 +741,6 @@ User Message:
 # ================= SEND CONTACT =================
 
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    # app.run(debug=True)
+    pass

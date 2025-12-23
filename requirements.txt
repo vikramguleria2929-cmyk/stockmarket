@@ -1,5 +1,6 @@
-upstox-python
+
 pandas
 pandas_ta
 yfinance
 python-dotenv
+gunicorn
