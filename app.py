@@ -11,6 +11,8 @@ import json
 import smtplib
 from email.mime.text import MIMEText
 from apscheduler.schedulers.background import BackgroundScheduler
+import requests
+from utils import send_email, load_alerts
 
 
 load_dotenv()  # Load .env file
@@ -641,37 +643,47 @@ def set_alert():
 
 # ===============alert function check alert=========================
 
-
 def check_alerts():
     alerts = load_alerts()
 
     for alert in alerts:
         try:
-            price = yf.Ticker(alert["symbol"]).history(
-                period="1d")["Close"].iloc[-1]
-            price = float(price)
+            # Try fetching stock price safely
+            try:
+                # Network check
+                requests.get("https://www.google.com", timeout=3)
+            except requests.RequestException:
+                # Network down, skip this iteration silently
+                print("Network unreachable. Alerts will retry in next cycle.")
+                return  # Exit function for now
 
+            ticker = yf.Ticker(alert["symbol"])
+            hist = ticker.history(period="1d", interval="1m")
+            if hist.empty:
+                hist = ticker.history(period="1d")
+
+            price = float(hist["Close"].iloc[-1])
             target = alert["target_price"]
             diff = price - target
 
-            # ⬆️ ABOVE CONDITION
+            # Check alert conditions
             if alert["condition"] == "above" and price >= target:
                 send_email(alert["symbol"], price, alert, diff)
 
-            # ⬇️ BELOW CONDITION
             elif alert["condition"] == "below" and price <= target:
                 send_email(alert["symbol"], price, alert, diff)
 
         except Exception as e:
-            print("Alert error:", e)
+            # Catch any other error and continue
+            print(f"Alert error for {alert['symbol']}: {e}")
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(
     check_alerts,
     "interval",
     minutes=1,
-    max_instances=1,  
-    coalesce=True      
+    max_instances=1,  # Prevent overlapping runs
+    coalesce=True      # Merge missed runs
 )
 scheduler.start()
 
