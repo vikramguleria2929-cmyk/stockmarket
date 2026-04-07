@@ -11,7 +11,7 @@ import json
 import smtplib
 from email.mime.text import MIMEText
 from apscheduler.schedulers.background import BackgroundScheduler
-import time
+
 
 load_dotenv()  # Load .env file
 
@@ -641,36 +641,29 @@ def set_alert():
 
 # ===============alert function check alert=========================
 
+
 def check_alerts():
     alerts = load_alerts()
+
     for alert in alerts:
         try:
-            # Retry up to 3 times if network error
-            for attempt in range(3):
-                try:
-                    ticker = yf.Ticker(alert["symbol"])
-                    hist = ticker.history(period="1d", interval="1m")
-                    if hist.empty:
-                        hist = ticker.history(period="1d")
-                    price = float(hist["Close"].iloc[-1])
-                    break  # success, exit retry loop
-                except Exception as e:
-                    print(f"Network or yfinance error, retry {attempt+1}/3: {e}")
-                    time.sleep(2)
-            else:
-                print(f"Skipping {alert['symbol']} after 3 failed attempts")
-                continue
+            price = yf.Ticker(alert["symbol"]).history(
+                period="1d")["Close"].iloc[-1]
+            price = float(price)
 
             target = alert["target_price"]
             diff = price - target
 
+            # ⬆️ ABOVE CONDITION
             if alert["condition"] == "above" and price >= target:
                 send_email(alert["symbol"], price, alert, diff)
+
+            # ⬇️ BELOW CONDITION
             elif alert["condition"] == "below" and price <= target:
                 send_email(alert["symbol"], price, alert, diff)
 
         except Exception as e:
-            print(f"Alert error for {alert['symbol']}: {e}")
+            print("Alert error:", e)
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(
@@ -678,7 +671,7 @@ scheduler.add_job(
     "interval",
     minutes=1,
     max_instances=1,  
-    coalesce=True    
+    coalesce=True      
 )
 scheduler.start()
 
