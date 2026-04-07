@@ -641,15 +641,24 @@ def set_alert():
 
 # ===============alert function check alert=========================
 
-
 def check_alerts():
     alerts = load_alerts()
 
     for alert in alerts:
         try:
-            price = yf.Ticker(alert["symbol"]).history(
-                period="1d")["Close"].iloc[-1]
-            price = float(price)
+            # Network check before fetching yfinance data
+            try:
+                requests.get("https://www.google.com", timeout=5)
+            except:
+                print("Network unreachable. Skipping alert check for now.")
+                continue
+
+            # Try fetching stock price
+            ticker = yf.Ticker(alert["symbol"])
+            hist = ticker.history(period="1d", interval="1m")
+            if hist.empty:
+                hist = ticker.history(period="1d")
+            price = float(hist["Close"].iloc[-1])
 
             target = alert["target_price"]
             diff = price - target
@@ -663,11 +672,16 @@ def check_alerts():
                 send_email(alert["symbol"], price, alert, diff)
 
         except Exception as e:
-            print("Alert error:", e)
-
+            print(f"Alert error for {alert['symbol']}: {e}")
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(check_alerts, "interval", minutes=1)  # now every 1 minute
+scheduler.add_job(
+    check_alerts,
+    "interval",
+    minutes=1,
+    max_instances=1,  
+    coalesce=True    
+)
 scheduler.start()
 
 
