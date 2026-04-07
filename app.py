@@ -12,7 +12,7 @@ import smtplib
 from email.mime.text import MIMEText
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
-from utils import send_email, load_alerts
+
 
 
 load_dotenv()  # Load .env file
