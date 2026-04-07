@@ -11,7 +11,7 @@ import json
 import smtplib
 from email.mime.text import MIMEText
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import time
 
 load_dotenv()  # Load .env file
 
@@ -643,31 +643,29 @@ def set_alert():
 
 def check_alerts():
     alerts = load_alerts()
-
     for alert in alerts:
         try:
-            # Network check before fetching yfinance data
-            try:
-                requests.get("https://www.google.com", timeout=5)
-            except:
-                print("Network unreachable. Skipping alert check for now.")
+            # Retry up to 3 times if network error
+            for attempt in range(3):
+                try:
+                    ticker = yf.Ticker(alert["symbol"])
+                    hist = ticker.history(period="1d", interval="1m")
+                    if hist.empty:
+                        hist = ticker.history(period="1d")
+                    price = float(hist["Close"].iloc[-1])
+                    break  # success, exit retry loop
+                except Exception as e:
+                    print(f"Network or yfinance error, retry {attempt+1}/3: {e}")
+                    time.sleep(2)
+            else:
+                print(f"Skipping {alert['symbol']} after 3 failed attempts")
                 continue
-
-            # Try fetching stock price
-            ticker = yf.Ticker(alert["symbol"])
-            hist = ticker.history(period="1d", interval="1m")
-            if hist.empty:
-                hist = ticker.history(period="1d")
-            price = float(hist["Close"].iloc[-1])
 
             target = alert["target_price"]
             diff = price - target
 
-            # ⬆️ ABOVE CONDITION
             if alert["condition"] == "above" and price >= target:
                 send_email(alert["symbol"], price, alert, diff)
-
-            # ⬇️ BELOW CONDITION
             elif alert["condition"] == "below" and price <= target:
                 send_email(alert["symbol"], price, alert, diff)
 
