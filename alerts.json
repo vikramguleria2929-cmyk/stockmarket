@@ -1,14 +1,14 @@
 [
     {
         "symbol": "RELIANCE.NS",
-        "target_price": 1575.0,
+        "target_price": 1561.0,
         "condition": "below",
-        "email": "viktoria@yopmail.com"
+        "email": "viktor@yopmail.com"
     },
     {
         "symbol": "RELIANCE.NS",
-        "target_price": 1575.0,
+        "target_price": 1561.0,
         "condition": "above",
-        "email": "viktoria@yopmail.com"
+        "email": "viktor@yopmail.com"
     }
 ]

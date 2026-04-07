@@ -1175,7 +1175,7 @@
 
 <!-- SEARCH + AUTOSUGGEST -->
 <script>
-  const companyPages = {{ company_pages|tojson }};
+  const companyPages = {{ company_pages|default({})|tojson }};
   const companyNames = Object.keys(companyPages);
   const searchInput = document.getElementById("companySearch");
   const suggestionsBox = document.getElementById("suggestions");
